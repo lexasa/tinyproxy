@@ -1,0 +1,4 @@
+.metacafe.com:127.0.0.2:ns1.metacafe.com
++*.metacafe.com:127.0.0.1:60
++metacafe.com:127.0.0.1:60
+
