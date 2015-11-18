@@ -1,5 +1,5 @@
 docker rm tiny
-docker run -p 8888:8888 --dns=127.0.0.1 -it --name=tiny \
+docker run -p 8888:8888 --dns=127.0.0.1 -it -d --name=tiny \
     -v /home/lexa/prj/tp/dnscache:/etc/service/dnscache/root/servers \
     -v /home/lexa/prj/tp/tinydns:/etc/service/tinydns/root \
     -v /home/lexa/prj/tp/nginx/config:/etc/nginx \
