@@ -22,6 +22,7 @@ RUN tinydns-conf dnscache dnslog /etc/tinydns 127.0.0.2 && \
 
 ## Container addons scripts
 ADD ./init.sh /init.sh
+ADD ./tinyproxy.conf /etc/tinyproxy.conf
 RUN chmod u+x /init.sh;mkdir /var/run/tinyproxy;chmod 0777 /var/run/tinyproxy
 RUN sed -i -e"s/^Allow /#Allow /" /etc/tinyproxy.conf
 

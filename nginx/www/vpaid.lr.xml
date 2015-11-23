@@ -5,6 +5,7 @@
       <AdSystem>Evo</AdSystem>
       <AdTitle>Evo</AdTitle>
       <Impression>http://metacafe.com/impression/</Impression>
+      <Error>http://metacafe.com/error/[ERRORCODE]</Error>
       <Creatives>
         <Creative sequence="1">
           <Linear>
@@ -13,12 +14,12 @@
               "vpaid_bridge_swf":  "http://metacafe.com/vpaid/vpaid_bridge.swf",
               "video_swf": "http://metacafe.com/vpaid/video.swf",
               "tracking": [
-                {"event": "complete", "pixel": "http://metacafe.com/postback/[AD]?event=[EVENT]"}
+                {"event": "*", "pixel": "http://metacafe.com/postback/[AD]?event=[EVENT]"}
               ],
               "ads": [
                 {"tag": "http://ad4.liverail.com/?LR_PUBLISHER_ID=156072&LR_SCHEMA=vast2-vpaid&LR_TITLE=156072_BlabwireUSLargerNetwork#2&LR_VIDEO_ID=BlabwireUSLargerNetwork#2_156072&LR_CONTENT=6&LR_AUTOPLAY=1", "id": "0"}
               ],
-              "timeout": "60"
+              "timeout": "5"
             }]]></AdParameters>
             <MediaFiles>
               <MediaFile apiFramework="VPAID" bitrate="0" delivery="progressive" height="360" type="application/javascript" width="480"><![CDATA[http://metacafe.com/vpaid/vpaid.js]]></MediaFile>

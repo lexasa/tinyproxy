@@ -1,4 +1,4 @@
-/* Timestamp: 1447875625 */
+/* Timestamp: 1447893654 */
 window.getVPAIDAd = function(){
 	(function(){
 		var s = document.createElement('STYLE');
@@ -163,6 +163,22 @@ function load(url, callback){
 	xhr.open('GET', url, true);
 	xhr.send(null);
 	return xhr;
+}
+
+function getDeviceInfo(){
+	var res, info = {};
+
+	if(res=navigator.userAgent.match(/\bandroid\s(\d+)\.(\d+)\.(\d+)\b/i)){
+		info.is_android = true;
+		info.version = [res[1],res[2],res[3]];
+	}
+	else if(/iPad/.test(navigator.platform)){
+		info.is_ipad = true;
+	}
+
+	info.is_mobile = info.is_android || info.is_ipad;
+
+	return info;
 }// 100 XML parsing error. 
 // 101 VAST schema validation error.
 // 102 VAST version of response not supported.
@@ -343,7 +359,7 @@ function processTracking(event){
 
 	this.on('vpaidevent', function(e, event, args){
 
-		console.log('>>>VPAID Log:', event, args)
+		// console.log('>>>VPAID Log:', event, args)
 
 		switch(event){
 			case 'AdLoaded':
@@ -564,8 +580,11 @@ function CustomPlayer(root, options){
 		plugins: {},
 		defaultVolume: 1,
 		allow_backends: keys(this.__backends),
-		flash_swf: 'video.swf',
 		cookieKeyVolume: null,
+		backend_options: {
+			flash_swf: options.flash_swf || 'video.swf',
+			useDefaultControls: false,
+		}
 	};
 	fill(this.conf, options);
 
@@ -575,11 +594,12 @@ function CustomPlayer(root, options){
 		this._initPlugins(this.conf.plugins);
 	}
 
+	if(this.conf.sources){
+		this.setSources(this.conf.sources);
+	}
+
 	var self = this;
 	setTimeout(function(){
-		if(self.conf.sources){
-			self.setSources(self.conf.sources);
-		}
 		self._init();
 	}, 0);
 }
@@ -590,8 +610,10 @@ CustomPlayer.prototype = extend(Object.create(CustomObject), {
 	__plugins: {},
 
 	_init: function(){
+		var self = this;
+
 		if(this.conf.autoplay){
-			this.play();
+			self.play();
 		}
 
 		if(this.conf.cookieKeyVolume){
@@ -621,9 +643,7 @@ CustomPlayer.prototype = extend(Object.create(CustomObject), {
 			if(this.backend){
 				this._destroyBackend();
 			}
-			this.backend = new backend_class({
-				flash_swf: this.conf.flash_swf,
-			});
+			this.backend = new backend_class(this.conf.backend_options);
 
 			this.backend.on('play', function(){
 				self.is_playing = true;
@@ -883,6 +903,11 @@ CustomPlayer.prototype = extend(Object.create(CustomObject), {
 		extend(this, options);
 
 		this.video = document.createElement('VIDEO');
+
+		if(options.poster){
+			this.video.poster = options.poster;
+		}
+		this.video.controls = options.useDefaultControls;
 	}
 
 	HTML5Backend.prototype = extend(Object.create(CustomObject), {
@@ -892,15 +917,31 @@ CustomPlayer.prototype = extend(Object.create(CustomObject), {
 			return typeof document.createElement('VIDEO').play == 'function';
 		},
 
+		isHLS: function(type){
+			return ['application/x-mpegURL', 'application/vnd.apple.mpegurl'].indexOf(type)>-1;
+		},
+
+		canPlayTypeNative: function(type){
+			var device = getDeviceInfo();
+			if(this.isHLS(type)){
+				if(device.is_android && device.version[0]>=4){
+					return true;
+				}
+			}
+			return ['maybe', 'probably'].indexOf(document.createElement('VIDEO').canPlayType(type))>-1;
+		},
+
 		canPlayType: function(type){
-			var native_support = ['maybe', 'probably'].indexOf(document.createElement('VIDEO').canPlayType(type)) > -1;
-						return native_support;
+			if(this.canPlayTypeNative(type)){
+				return true;
+			}
+						return false;
 		},
 
 		setSource: function(source, type){
 			var self = this;
 
-			if(['maybe', 'probably'].indexOf(this.video.canPlayType(type))>-1){
+			if(this.canPlayTypeNative(type)){
 				this.video.src = source;
 				this.video.load();
 			}
@@ -941,7 +982,9 @@ CustomPlayer.prototype = extend(Object.create(CustomObject), {
 			var self = this;
 
 			// this.on('*', function(e){
-			// 	document.body.appendChild(html('<div>'+e.type+'</div>'));
+			// 	if(e.type!='timeupdate'){
+			// 		document.body.appendChild(html('<div>EVENT: '+e.type+'</div>'));
+			// 	}
 			// });
 
 			this.video.onerror = function(){
@@ -965,7 +1008,7 @@ CustomPlayer.prototype = extend(Object.create(CustomObject), {
 			});
 
 			this.video.addEventListener('timeupdate', function(){
-				var in_range = false;
+				var in_range = null;
 				for(var i=0; i<this.buffered.length; i++){
 					if(
 						this.currentTime > this.buffered.start(i) &&
@@ -975,14 +1018,17 @@ CustomPlayer.prototype = extend(Object.create(CustomObject), {
 						break;
 					}
 				}
-				if(in_range){
-					if(self.is_waiting){
-						self.trigger('playing');
-						self.is_waiting = false;
+
+				if(in_range!==null){
+					if(in_range){
+						if(self.is_waiting){
+							self.trigger('playing');
+							self.is_waiting = false;
+						}
+					}else{
+						self.is_waiting = true;
+						self.trigger('waiting');
 					}
-				}else{
-					self.is_waiting = true;
-					self.trigger('waiting');
 				}
 
 				self.trigger('timeupdate', this.currentTime);
@@ -1955,6 +2001,7 @@ CompanionCreative.prototype = extend(Object.create(CustomObject), {
 });
 function Creative(xml, options){
 
+	this.parent = null;
 	this.linear_options = {};
 	this.nonlinear_options = {};
 	this.companion_options = {};
@@ -2020,6 +2067,8 @@ Creative.prototype = extend(Object.create(CustomObject), {
 			return;
 		}
 
+		this.creative.parent = this;
+
 		this.creative.proxy([
 			'ready',
 			'vasterror',
@@ -2046,6 +2095,7 @@ Creative.prototype = extend(Object.create(CustomObject), {
 });
 function InLine(xml, options){
 
+	this.parent = null;
 	this.linear_options = {};
 	this.nonlinear_options = {};
 	this.companion_options = {};
@@ -2076,6 +2126,24 @@ function InLine(xml, options){
 		this.is_linear_done = true;
 	});
 
+	this.on('vastevent', function(e, name, args, source){
+		if(name=='creativeView'){
+			e.handler.remove();
+			if(this.impression_url){
+				firePixel(this.impression_url);
+				this.trigger('vastevent', 'impression', {url:this.impression_url}, this);
+			}
+		}
+	});
+
+	this.on('vasterror', function(e, errno, error, source){
+		if(this.error_url){
+			firePixel(this.error_url, {
+				'ERRORCODE': errno
+			});
+		}
+	});
+
 	var self = this;
 	setTimeout(function(){
 		self.parse(xml);
@@ -2098,6 +2166,7 @@ InLine.prototype = extend(Object.create(CustomObject), {
 		if(creatives_xml = xml.getElementsByTagName('Creatives')[0]){
 
 			var options = {
+				parent: self,
 				linear_options: self.linear_options,
 				nonlinear_options: self.nonlinear_options,
 				companion_options: self.companion_options,
@@ -2175,12 +2244,15 @@ InLine.prototype = extend(Object.create(CustomObject), {
 	},
 });function Wrapper(xml, options){
 
+	this.parent = null;
 	this.linear_options = {};
 	this.nonlinear_options = {};
 	this.companion_options = {};
 	extend(this, options);
 
 	this.vast;
+	this.error_url;
+	this.impression_url;
 
 	this.on('ready', function(){
 		this.is_ready = true;
@@ -2190,6 +2262,24 @@ InLine.prototype = extend(Object.create(CustomObject), {
 	});
 	this.on('lineardone', function(){
 		this.is_linear_done = true;
+	});
+
+	this.on('vastevent', function(e, name, args, source){
+		if(name=='creativeView'){
+			e.handler.remove();
+			if(this.impression_url){
+				firePixel(this.impression_url);
+				this.trigger('vastevent', 'impression', {url:this.impression_url}, this);
+			}
+		}
+	});
+
+	this.on('vasterror', function(e, errno, error, source){
+		if(this.error_url){
+			firePixel(this.error_url, {
+				'ERRORCODE': errno
+			});
+		}
 	});
 
 	var self = this;
@@ -2204,7 +2294,16 @@ Wrapper.prototype = extend(Object.create(CustomObject), {
 		var self = this;
 		var url = xml.getElementsByTagName("VASTAdTagURI")[0].textContent;
 
+		if(error_xml=xml.getElementsByTagName('Error')[0]){
+			this.error_url = error_xml.textContent.trim();
+		}
+
+		if(impression_xml=xml.getElementsByTagName('Impression')[0]){
+			this.impression_url = impression_xml.textContent.trim();
+		}
+
 		this.vast = new VAST(url, {
+			parent: this,
 			linear_options: this.linear_options,
 			nonlinear_options: this.nonlinear_options,
 			companion_options: this.companion_options,
@@ -2239,6 +2338,7 @@ Wrapper.prototype = extend(Object.create(CustomObject), {
 });
 function Ad(xml, options){
 
+	this.parent = null;
 	this.linear_options = {};
 	this.nonlinear_options = {};
 	this.companion_options = {};
@@ -2278,6 +2378,7 @@ Ad.prototype = extend(Object.create(CustomObject), {
 		this.sequence = parseInt(xml.getAttribute('sequence')) || 1;
 
 		var options = {
+			parent: this,
 			linear_options: self.linear_options,
 			nonlinear_options: self.nonlinear_options,
 			companion_options: self.companion_options,
@@ -2321,6 +2422,7 @@ Ad.prototype = extend(Object.create(CustomObject), {
 function VAST(url, options){
 	var self = this;
 
+	this.parent = null;
 	this.timeout = 5000;
 	this.linear_options = {
 		player_options: {},
@@ -2375,6 +2477,7 @@ VAST.prototype = extend(Object.create(CustomObject), {
 
 				map(xhr.responseXML.documentElement.getElementsByTagName('Ad'), function(ad_xml){
 					var ad = new Ad(ad_xml, {
+						parent: self,
 						linear_options: self.linear_options,
 						nonlinear_options: self.nonlinear_options,
 						companion_options: self.companion_options,
