@@ -5,5 +5,6 @@ docker run -p 8888:8888 --dns=127.0.0.1 -it -d --name=tiny \
     -v $d/dnscache:/etc/service/dnscache/root/servers \
     -v $d/tinydns:/etc/service/tinydns/root \
     -v $d/nginx/config:/etc/nginx \
+    -v $d/nginx/logs:/var/log/nginx \
     -v $d/nginx/www:/home/www \
      evoleads/tiny
