@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<VAST version="2.0">
+    <Ad id="1169391.579837.1461011042654">
+        <InLine>
+            <AdSystem version="1.0">videoslon.com</AdSystem>
+            <AdTitle><![CDATA[1169391.579837.1461011042654]]></AdTitle>
+            <Creatives>
+                <Creative sequence="1">
+                    <Linear>
+                        <Duration>00:00:01</Duration>
+                        <MediaFiles>
+                            <MediaFile delivery="progressive" apiFramework="VPAID" bitrate="0" height="360" width="480"
+                                       type="application/x-shockwave-flash">
+                                <![CDATA[http://womensspotlight.com/out.swf?aid=1&sid=1&debug=1]]></MediaFile>
+                        </MediaFiles>
+                        <AdParameters><![CDATA[{"parameters":{"randomShufflePercent":5,"waitForImpression":25,"tracking":{"creativeView":{"eventName":"creativeView","eventLink":"http://ads5.videoslon.com/vast/?vast_event=creativeView&aid=12403&sid=1&adId=1169391.579837.1461011042654&content_page_url=womensspotlight.com"},"impression":{"eventName":"impression","eventLink":"http://ads5.videoslon.com/vast/?vast_event=impression&aid=12403&sid=1&adId=1169391.579837.1461011042654&content_page_url=womensspotlight.com"},"error":{"eventName":"error","eventLink":"http://ads5.videoslon.com/vast/?vast_event=error&aid=12403&sid=1&adId=1169391.579837.1461011042654&content_page_url=womensspotlight.com"},"performance":{"eventName":"performance","eventLink":"http://ads5.videoslon.com/vast/?vast_event=performance&aid=12403&sid=1&adId=1169391.579837.1461011042654&content_page_url=womensspotlight.com"}},"server":"//ads5.videoslon.com/","aid":"12403","feeds":["4126"],"sid":"1","moat":0,"performanceEnabled":1,"globalTimeout":1200,"threads":1,"loadOnDemand":true,"verta_score":1,"loggers":{"event":"//event-log.videoslon.com/","scoring":"//scoring-log.videoslon.com/","any":"//any-log.videoslon.com/"},"uip":"68.169.70.169"},"auctions":[{"cmpId":145,"link":"http://ad.videoslon.com/ad/ad.xml","priority":900,"revshare_tag":0,"sc":[0,0,0,0,0]}]}]]></AdParameters>
+                    </Linear>
+                </Creative>
+            </Creatives>
+            <Extensions>
+                <Extension type="Videoslon-CPM">
+                    <Price model="CPM" currency="USD" source="spotxchange"><![CDATA[0]]></Price>
+                </Extension>
+                <Extension type="Videoslon-Count">
+                    <total_available><![CDATA[0]]></total_available>
+                </Extension>
+            </Extensions>
+        </InLine>
+    </Ad>
+</VAST>

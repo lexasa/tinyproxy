@@ -1,4 +1,4 @@
-/* version: a870ccc.1461338651 */
+/* Timestamp: 1447893654 */
 window.getVPAIDAd = function(){
 	(function(){
 		var s = document.createElement('STYLE');
@@ -152,91 +152,34 @@ function setCookie(key, value){
 	document.cookie = key+"="+value+"; path=/";
 }
 
-function _getXHR(){
-	if (window.XDomainRequest){
-		return new XDomainRequest();
-	}else if (window.XMLHttpRequest){
-		return new XMLHttpRequest();
-	}else{
-		return false;
-	}
-}
-
 function load(url, callback){
 	var self = this;
-	var xhr = _getXHR();
-
-	xhr.onload = function(){
-		if(!xhr.responseXML){
-			xhr.responseXML = (new DOMParser).parseFromString(xhr.responseText, 'text/xml')
+	var xhr = new XMLHttpRequest();
+	xhr.onreadystatechange = function(){
+		if(xhr.readyState==4){
+			callback(xhr.status==200, xhr);
 		}
-		callback(true, xhr);
-	}
-
-	xhr.onerror = function(){
-		callback(false, xhr);
-	}
-
+	};
 	xhr.open('GET', url, true);
 	xhr.send(null);
 	return xhr;
 }
 
-function post(url, data){
-	var xhr = _getXHR();
-	xhr.open('POST', url, true);
-	xhr.send(data);
-}
-
 function getDeviceInfo(){
 	var res, info = {};
 
-	if(res=navigator.userAgent.match(/\bandroid\s(\d+)\.(\d+)(\.(\d+))?\b/i)){
+	if(res=navigator.userAgent.match(/\bandroid\s(\d+)\.(\d+)\.(\d+)\b/i)){
 		info.is_android = true;
-		info.version = [res[1]|0,res[2]|0,res[4]|0];
-	}
-	else if(/iPhone/.test(navigator.platform)){
-		info.is_iphone = true;
+		info.version = [res[1],res[2],res[3]];
 	}
 	else if(/iPad/.test(navigator.platform)){
 		info.is_ipad = true;
 	}
-	else if(/iPod/.test(navigator.platform)){
-		info.is_ipod = true;
-	}
 
-	info.is_mobile = info.is_android
-		|| info.is_iphone
-		|| info.is_ipad
-		|| info.is_ipod;
+	info.is_mobile = info.is_android || info.is_ipad;
 
 	return info;
-}
-
-var debug = {
-	enable: false,
-
-	on: function(){
-		this.enable = true;
-	},
-
-	off: function(){
-		this.enable = false;
-	},
-
-	log: function(){
-		if(this.enable){
-			var d = new Date;
-
-			var date = ('0'+d.getHours()).substr(-2)
-			+':'+('0'+d.getMinutes()).substr(-2)
-			+':'+('0'+d.getSeconds()).substr(-2);
-
-			var log = "[DEBUG]["+date+"]" + [].join.call(arguments, ' ');
-			console.info(log);
-		}
-	}
-};// 100 XML parsing error. 
+}// 100 XML parsing error. 
 // 101 VAST schema validation error.
 // 102 VAST version of response not supported.
 // 200 Trafficking error. Video player received an Ad type that it was not expecting and/or cannot display.
@@ -279,13 +222,6 @@ CustomObject = {
 		}
 	},
 
-	one: function(type, handler, scope){
-		this.on(type, function(e){
-			e.handler.remove();
-			handler.apply(this, arguments);
-		}, scope);
-	},
-
 	on: function(type, handler, scope){
 		var self = this;
 		this._handlers = this._handlers || {};
@@ -307,14 +243,6 @@ CustomObject = {
 			});
 		}
 		return this;
-	},
-
-	off: function(type){
-		this._handlers = this._handlers || {};
-
-		if(typeof this._handlers[type]!=='undefined'){
-			delete this._handlers[type];
-		}
 	},
 
 	trigger: function(type){
@@ -352,8 +280,6 @@ function firePixel(url, params){
 	var glue = url.indexOf('?')==-1 ? '?' : '&';
 	// pixel.src = url+glue+((new Date)-0);
 	pixel.src = url;
-
-	debug.log("Fire pixel", url);
 }
 
 function openWindow(url, params){
@@ -362,7 +288,7 @@ function openWindow(url, params){
 
 function parseTrackingEvents(xml){
 	var events = {};
-	if(xml && xml.tagName.match(/^TrackingEvents$/i)){
+	if(xml){
 		map(xml.getElementsByTagName("Tracking"), function(tracking_xml){
 			var event = {};
 			var name = tracking_xml.getAttribute("event");
@@ -433,7 +359,7 @@ function processTracking(event){
 
 	this.on('vpaidevent', function(e, event, args){
 
-		debug.log('VPAID event:', event);
+		// console.log('>>>VPAID Log:', event, args)
 
 		switch(event){
 			case 'AdLoaded':
@@ -458,6 +384,7 @@ function processTracking(event){
 			break;
 			case 'AdStarted':
 				self.trigger('vastevent', 'start', {}, self);
+				self.trigger('vastevent', 'creativeView', {}, self);
 			break;
 			case 'AdVideoFirstQuartile':
 				self.trigger('vastevent', 'firstQuartile', {}, self);
@@ -467,10 +394,6 @@ function processTracking(event){
 			break;
 			case 'AdVideoThirdQuartile':
 				self.trigger('vastevent', 'thirdQuartile', {}, self);
-			break;
-			case 'AdImpression':
-				self.trigger('start', self);
-				self.trigger('vastevent', 'creativeView', {}, self);
 			break;
 		}
 	});
@@ -515,7 +438,6 @@ VPAIDLinear.prototype = extend(Object.create(CustomObject), {
 		place.appendChild(iframe);
 
 		var _t = setTimeout(function(){
-			debug.log("Timeout VPAID AdLoaded event > skip");
 			self.trigger('vasterror', 900, 'Timeout VPAID AdLoaded event');
 		}, options.timeout);
 
@@ -557,7 +479,6 @@ VPAIDLinear.prototype = extend(Object.create(CustomObject), {
 			console.log('getAdLinear:', self.vpaid.getAdLinear());
 
 			subscribe('AdLoaded', function(){
-				debug.log('Call "startAd" for flash VPAID application');
 				self.vpaid.startAd();
 			});
 
@@ -567,9 +488,7 @@ VPAIDLinear.prototype = extend(Object.create(CustomObject), {
 				});
 			});
 
-			debug.log('Call "initAd" for flash VPAID application');
-
-			self.vpaid.initAd(width, height, "normal", 500, self.creative.params.AdParameters, "");
+			self.vpaid.initAd(width, height, "normal", 500, self.creative.params, "");
 		};
 
 		doc.open();
@@ -588,6 +507,8 @@ VPAIDLinear.prototype = extend(Object.create(CustomObject), {
 			'</body>'
 		);
 		doc.close();
+
+		console.log(this);
 	},
 
 	showJS: function(iframe, width, height, options){
@@ -691,7 +612,7 @@ CustomPlayer.prototype = extend(Object.create(CustomObject), {
 	_init: function(){
 		var self = this;
 
-		if(this.conf.autoplay && !getDeviceInfo().is_mobile){
+		if(this.conf.autoplay){
 			self.play();
 		}
 
@@ -726,14 +647,10 @@ CustomPlayer.prototype = extend(Object.create(CustomObject), {
 
 			this.backend.on('play', function(){
 				self.is_playing = true;
-				if(self.has_been_paused){
-					self.trigger('resume');
-				}
 			});
 
 			this.backend.on('pause', function(){
 				self.is_playing = false;
-				self.has_been_paused = true;
 			});
 
 			this.backend.on('ended', function(){
@@ -815,7 +732,7 @@ CustomPlayer.prototype = extend(Object.create(CustomObject), {
 	},
 
 	//---- API ----
-
+	
 	getWidth: function(){
 		return this.root.offsetWidth;
 	},
@@ -886,7 +803,8 @@ CustomPlayer.prototype = extend(Object.create(CustomObject), {
 				if(this.backend.is_ready){
 					this.backend.setSource(self.source.src, self.source.type);
 				}else{
-					this.backend.one('ready', function(e){
+					this.backend.on('ready', function(e){
+						e.handler.remove();
 						this.setSource(self.source.src, self.source.type);
 					});
 				}
@@ -906,7 +824,8 @@ CustomPlayer.prototype = extend(Object.create(CustomObject), {
 			if(this.is_start_load){
 				this.backend.play();
 			}else{
-				this.one('canplay', function(e){
+				this.on('canplay', function(e){
+					e.handler.remove();
 					this.backend.play();
 				});
 				this.load();
@@ -973,16 +892,6 @@ CustomPlayer.prototype = extend(Object.create(CustomObject), {
 		}
 	},
 
-	showDefaultUI: function(){
-		if(this.backend){
-			this.backend.showDefaultUI();
-		}else{
-			this.one('backendchange', function(e, backend){
-				backend.showDefaultUI();
-			})
-		}
-	}
-
 });
 		HTML5Backend = (function(){
 
@@ -998,6 +907,7 @@ CustomPlayer.prototype = extend(Object.create(CustomObject), {
 		if(options.poster){
 			this.video.poster = options.poster;
 		}
+		this.video.controls = options.useDefaultControls;
 	}
 
 	HTML5Backend.prototype = extend(Object.create(CustomObject), {
@@ -1078,10 +988,10 @@ CustomPlayer.prototype = extend(Object.create(CustomObject), {
 			// });
 
 			this.video.onerror = function(){
-				self.trigger('error', 201);
+				// self.trigger('error', 201);
 			};
 
-			this.video.oncontextmenu = function(){
+			this.video.oncontextmenu= function(){
 				event.preventDefault();
 			};
 
@@ -1202,14 +1112,6 @@ CustomPlayer.prototype = extend(Object.create(CustomObject), {
 			return this.video.volume;
 		},
 
-		showDefaultUI: function(){
-			this.video.controls = true;
-		},
-
-		hideDefaultUI: function(){
-			this.video.controls = false;
-		}
-
 	});
 
 	return HTML5Backend;
@@ -1231,17 +1133,6 @@ FlashBackend.prototype = extend(Object.create(CustomObject), {
 			fn.apply(window, arguments);
 		};
 		return public_way+'.'+uniq;
-	},
-
-	_setSWFProperty: function(key, value){
-		if(!this.swf.vjs_setProperty){
-			var self = this;
-			setTimeout(function(){
-				self._setSWFProperty(key, value);
-			}, 0);
-			return;
-		}
-		this.swf.vjs_setProperty(key, value);
 	},
 
 	init: function(){
@@ -1298,7 +1189,7 @@ FlashBackend.prototype = extend(Object.create(CustomObject), {
 
 	initEvents: function(){
 		var self = this;
-		this._setSWFProperty("eventProxyFunction", this._flashFn(function(e, type){
+		this.swf.vjs_setProperty("eventProxyFunction", this._flashFn(function(e, type){
 			switch(type){
 				case 'playing':
 					self.trigger('playing');
@@ -1328,7 +1219,7 @@ FlashBackend.prototype = extend(Object.create(CustomObject), {
 			}
 		}));
 
-		this._setSWFProperty("errorEventProxyFunction", this._flashFn(function(id, error){
+		this.swf.vjs_setProperty("errorEventProxyFunction", this._flashFn(function(id, error){
 			switch(error){
 				case 'srcnotfound':
 					self.trigger('error', 201);
@@ -1380,24 +1271,16 @@ FlashBackend.prototype = extend(Object.create(CustomObject), {
 	},
 
 	setCurrentTime: function(time){
-		this._setSWFProperty('currentTime', time);
+		this.swf.vjs_setProperty('currentTime', time);
 	},
 
 	setVolume: function(value){
-		this._setSWFProperty('volume', value);
+		this.swf.vjs_setProperty('volume', value);
 	},
 
 	getVolume: function(value){
 		return this.swf.vjs_getProperty('volume');
 	},
-
-	showDefaultUI: function(){
-
-	},
-
-	hideDefaultUI: function(){
-
-	}
 
 });	CustomPlayer.prototype.__backends.Flash = FlashBackend;
 function VideoLinear(options){
@@ -1421,60 +1304,54 @@ VideoLinear.prototype = extend(Object.create(CustomObject), {
 
 		this.player = new CustomPlayer(place, options);
 
-		this.player.on('error', function(e, code, message){
-			self.trigger('vasterror', 400, 'General Linear error. '+message, this);
+		this.player.on('error', function(){
+
 		});
 
-		this.player.one('play', function(e){
+		this.player.on('ended', function(){
+			self.trigger('vastevent', 'complete', {}, self.creative);
+		});
 
-			this.on('ended', function(){
-				self.trigger('vastevent', 'complete', {}, self.creative);
-				self.off('vastevent');
-			});
-
-			this.on('pause', function(){
-				self.trigger('vastevent', 'pause', {}, self.creative);
-			});
-
-			this.on('resume', function(){
-				self.trigger('vastevent', 'resume', {}, self.creative);
-			});
-
-			var prevous_volume;
-			this.on('volumechange', function(e, volume){
-				if(volume>0 && prevous_volume==0){
-					self.trigger('vastevent', 'unmute', {}, self.creative);
-				}
-				if(volume==0 && prevous_volume!=0){
-					self.trigger('vastevent', 'mute', {}, self.creative);
-				}
-				prevous_volume = volume;
-			});
-
-			var step = 0;
-			this.on('timeupdate', function(e, time){
-				var progress = time / this.getDuration() * 100;
-				if(progress>0 && step==0){ step++;
-					self.trigger('vastevent', 'start', {}, self.creative);
-					self.trigger('vastevent', 'creativeView', {}, self.creative);
-				}
-				if(progress>25 && step==1){ step++;
-					self.trigger('vastevent', 'firstQuartile', {}, self.creative);
-				}
-				if(progress>50 && step==2){ step++;
-					self.trigger('vastevent', 'midpoint', {}, self.creative);
-				}
-				if(progress>75 && step==3){ step++;
-					self.trigger('vastevent', 'thirdQuartile', {}, self.creative);
-				}
-			});
-
+		this.player.on('canplay', function(e){
+			e.handler.remove();
 			self.trigger('start', self);
+			self.player.play();
 		});
 
-		this.player.one('canplay', function(e){
-			if(!getDeviceInfo().is_mobile){
-				self.player.play();
+		this.player.on('pause', function(){
+			self.trigger('vastevent', 'pause', {}, self.creative);
+		});
+
+		this.player.on('resume', function(){
+			self.trigger('vastevent', 'resume', {}, self.creative);
+		});
+
+		var prevous_volume;
+		this.player.on('volumechange', function(e, volume){
+			if(volume>0 && prevous_volume==0){
+				self.trigger('vastevent', 'unmute', {}, self.creative);
+			}
+			if(volume==0 && prevous_volume!=0){
+				self.trigger('vastevent', 'mute', {}, self.creative);
+			}
+			prevous_volume = volume;
+		});
+
+		var step = 0;
+		this.player.on('timeupdate', function(e, time){
+			var progress = time / this.getDuration() * 100;
+			if(progress>0 && step==0){ step++;
+				self.trigger('vastevent', 'start', {}, self.creative);
+				self.trigger('vastevent', 'creativeView', {}, self.creative);
+			}
+			if(progress>25 && step==1){ step++;
+				self.trigger('vastevent', 'firstQuartile', {}, self.creative);
+			}
+			if(progress>50 && step==2){ step++;
+				self.trigger('vastevent', 'midpoint', {}, self.creative);
+			}
+			if(progress>75 && step==3){ step++;
+				self.trigger('vastevent', 'thirdQuartile', {}, self.creative);
 			}
 		});
 
@@ -1530,16 +1407,11 @@ MediaFile.prototype = extend(Object.create(CustomObject), {
 		], self);
 	},
 
-	getSource: function(){
-		return this.media.src;
-	},
-
 	getIsSupport: function(){
 		return this.media.getIsSupport();
 	},
 
 	show: function(place, width, height, options){
-		this.creative.is_vpaid = this.is_vpaid;
 		this.media.show(place, width, height, options);
 	},
 
@@ -1552,6 +1424,9 @@ function LinearCreative(xml, options){
 	this.player_options = {};
 	this.vpaid_options = {};
 	extend(this, options);
+
+	this.width = this.width || this.place.offsetWidth;
+	this.height = this.height || this.place.offsetHeight;
 
 	this.id;
 	this.skipoffset = null;
@@ -1572,13 +1447,11 @@ function LinearCreative(xml, options){
 
 	this.on('vasterror', function(e, code, message, source){
 		this.is_error = true;
+		this.place.innerHTML = '';
 		this.trigger('error');
 	});
 
 	this.on('vastevent', function(e, event, args, source){
-
-		debug.log('VAST event', event, JSON.stringify(args));
-
 		switch(event){
 			case 'clickthru':
 				if(!args.no_fire_pixel){
@@ -1594,7 +1467,7 @@ function LinearCreative(xml, options){
 	});
 
 	this.on('start', function(e){
-		this.trigger('linearstart', this);
+		self.trigger('linearstart', self);
 	});
 
 	this.on('done', function(){
@@ -1657,7 +1530,7 @@ LinearCreative.prototype = extend(Object.create(CustomObject), {
 		this.trigger('ready');
 	},
 
-	show: function(options){
+	show: function(){
 		var self = this;
 
 		if(this.medias.length){
@@ -1671,29 +1544,21 @@ LinearCreative.prototype = extend(Object.create(CustomObject), {
 			}
 			if(this.media){
 				var p = html('<div style="position:absolute; width:100%; height:100%; top:0; background:black"></div>');
-				options.place.appendChild(p);
+				self.place.appendChild(p);
 				this.on('done', function(){
-					options.place.removeChild(p);
+					self.place.removeChild(p);
 				});
 
-				if(options.place.offsetHeight==0){
-					return;
-				}
-
 				if(this.media.is_vpaid){
-					debug.log('Show linear VPAID', this.media.getSource());
-					this.media.show(p, options.place.offsetWidth, options.place.offsetHeight, options.vpaid_options);
+					this.media.show(p, self.width, self.height, self.vpaid_options);
 				}else{
-					debug.log('Show linear video', this.media.getSource());
-					this.media.show(p, options.place.offsetWidth, options.place.offsetHeight, options.player_options);
+					this.media.show(p, self.width, self.height, self.player_options);
 				}
 
 			}else{
-				debug.log("No support any media of this creative", this.id);
 				this.trigger('vasterror', 403, 'Couldn\'t find MediaFile that is supported by this video player, based on the attributes of the MediaFile element.', this);
 			}
 		}else{
-			debug.log("Not found any media of this creative", this.id);
 			this.trigger('vasterror', 400, 'General Linear error. Video player is unable to display the Linear Ad.', this);
 		}
 	},
@@ -2178,7 +2043,7 @@ Creative.prototype = extend(Object.create(CustomObject), {
 		var self = this;
 
 		this.id = xml.getAttribute('id') || null;
-		this.tracking = {}; // parseTrackingEvents(xml.getElementsByTagName('TrackingEvents')[0]);
+		this.tracking = parseTrackingEvents(creatives_xml.getElementsByTagName('TrackingEvents')[0]);
 
 		if(linear_xml = xml.getElementsByTagName('Linear')[0]){
 			this.type = 'linear';
@@ -2213,15 +2078,16 @@ Creative.prototype = extend(Object.create(CustomObject), {
 	},
 
 	show: function(){
+		var self = this;
 		switch(this.type){
 			case 'linear':
-				this.creative.show(this.linear_options);
+				this.creative.show();
 			break;
 			case 'nonlinear':
-				this.creative.show(this.nonlinear_options);
+				this.creative.show();
 			break;
 			case 'companion':
-				this.creative.show(this.companion_options);
+				this.creative.show();
 			break;
 		}
 	},
@@ -2288,8 +2154,6 @@ InLine.prototype = extend(Object.create(CustomObject), {
 	
 	parse: function(xml){
 		var self = this;
-
-		debug.log("Parse InLine tag");
 
 		if(error_xml=xml.getElementsByTagName('Error')[0]){
 			this.error_url = error_xml.textContent.trim();
@@ -2368,18 +2232,12 @@ InLine.prototype = extend(Object.create(CustomObject), {
 	},
 
 	startNonLinear: function(){
-		if(this.nonlinear.length==0){
-			debug.log("This creative haven't any nonlinear creatives");
-		}
 		map(this.nonlinear, function(creative){
 			creative.show();
 		});
 	},
 
 	startCompanion: function(){
-		if(this.companion.length==0){
-			debug.log("This creative haven't any companion creatives");
-		}
 		map(this.companion, function(creative){
 			creative.show();
 		});
@@ -2395,11 +2253,6 @@ InLine.prototype = extend(Object.create(CustomObject), {
 	this.vast;
 	this.error_url;
 	this.impression_url;
-	this.trackings = {
-		'linear': {},
-		'nonlinear': {},
-		'companion': {},
-	};
 
 	this.on('ready', function(){
 		this.is_ready = true;
@@ -2418,18 +2271,6 @@ InLine.prototype = extend(Object.create(CustomObject), {
 				firePixel(this.impression_url);
 				this.trigger('vastevent', 'impression', {url:this.impression_url}, this);
 			}
-		}
-	});
-
-	this.on('vastevent', function(e, event, args, source){
-		if(source instanceof LinearCreative){
-			processTracking(this.trackings['linear'][event]);
-		}
-		if(source instanceof NonLinearCreative){
-			processTracking(this.trackings['nonlinear'][event]);
-		}
-		if(source instanceof CompanionCreative){
-			processTracking(this.trackings['companion'][event]);
 		}
 	});
 
@@ -2453,8 +2294,6 @@ Wrapper.prototype = extend(Object.create(CustomObject), {
 		var self = this;
 		var url = xml.getElementsByTagName("VASTAdTagURI")[0].textContent;
 
-		debug.log("Parse Wrapper tag");
-
 		if(error_xml=xml.getElementsByTagName('Error')[0]){
 			this.error_url = error_xml.textContent.trim();
 		}
@@ -2470,26 +2309,12 @@ Wrapper.prototype = extend(Object.create(CustomObject), {
 			companion_options: this.companion_options,
 		});
 
-		if(creatives_xml = xml.getElementsByTagName('Creatives')[0]){
-			map(creatives_xml.getElementsByTagName('Creative'), function(creative_xml){
-				if(linear_xml = xml.getElementsByTagName('Linear')[0]){
-					self.trackings['linear'] = parseTrackingEvents(linear_xml.getElementsByTagName('TrackingEvents')[0]);
-				}
-				if(nonlinear_xml = xml.getElementsByTagName('NonLinearAds')[0]){
-					self.trackings['nonlinear'] = parseTrackingEvents(nonlinear_xml.getElementsByTagName('TrackingEvents')[0]);
-				}
-				if(companion_xml = xml.getElementsByTagName('CompanionAds')[0]){
-					self.trackings['companion'] = parseTrackingEvents(companion_xml.getElementsByTagName('TrackingEvents')[0]);
-				}
-			});
-		}
-
 		this.vast.proxy([
 			'ready',
 			'error',
-			'vastevent',
-			'vasterror',
 			'lineardone',
+			'vasterror',
+			'vastevent',
 			'linearstart',
 		], self);
 	},
@@ -2536,6 +2361,7 @@ function Ad(xml, options){
 	this.on('lineardone', function(){
 		this.is_linear_done = true;
 	});
+
 
 	var self = this;
 	setTimeout(function(){
@@ -2597,7 +2423,7 @@ function VAST(url, options){
 	var self = this;
 
 	this.parent = null;
-	this.timeout = 7000;
+	this.timeout = 5000;
 	this.linear_options = {
 		player_options: {},
 		vpaid_options: {
@@ -2608,11 +2434,7 @@ function VAST(url, options){
 	this.companion_options = {};
 	extend(this, options);
 
-	this.url = extendUrl(url, {
-		'URL': location.href,
-		'CONTAINER_WIDTH': this.linear_options.width,
-		'CONTAINER_HEIGHT': this.linear_options.height,
-	});
+	this.url = url;
 
 	this.ads = [];
 
@@ -2620,24 +2442,17 @@ function VAST(url, options){
 	this.is_error = false;
 	this.is_linear_done = false;
 
+	this.load(url);
+
 	this.on('ready', function(){
 		this.is_ready = true;
 	});
-	this.on('error', function(e, code, message){
-		debug.log("ERROR in VAST", this.url, code, message);
+	this.on('error', function(){
 		this.is_error = true;
 	});
-	this.on('vasterror', function(e, code, message){
-		debug.log("ERROR in VAST", this.url, code, message);
-	});
 	this.on('lineardone', function(){
-		debug.log("End linear procees for VAST", this.url);
 		this.is_linear_done = true;
 	});
-
-	// setTimeout(function() {
-		self.load(self.url);
-	// }, 0);
 }
 
 VAST.prototype = extend(Object.create(CustomObject), {
@@ -2646,29 +2461,16 @@ VAST.prototype = extend(Object.create(CustomObject), {
 		var self = this;
 		var xhr = null;
 
-		debug.log('Load VAST tag:', url);
-
-		var _t;
-
-		if(this.timeout){
-			_t = setTimeout(function(){
-				debug.log("Timeout load", url);
-				self.trigger('error', 301, 'Timeout of VAST URI '+url);
-				xhr.abort();
-			}, this.timeout);
-		}
+		var _t = setTimeout(function(){
+			self.trigger('error', 301, 'Timeout of VAST URI provided in Wrapper element');
+			xhr.abort();
+		}, this.timeout);
 
 		xhr = load(url, function(success, xhr){
 			clearTimeout(_t);
-
 			if(success){
-				if(xhr.status==0){
-					debug.log('Can not load VAST tag');
-					self.trigger('error', 902, 'Can not load VAST tag');
-					return;
-				}
+
 				if(!xhr.responseXML || !xhr.responseXML.documentElement){
-					debug.log('XML parsing error');
 					self.trigger('error', 100, 'XML parsing error');
 					return;
 				}
@@ -2699,20 +2501,12 @@ VAST.prototype = extend(Object.create(CustomObject), {
 				if(self.ads.length){
 					self.ads.sort(function(a, b){return a.sequence - b.sequence});
 				}else{
-					debug.log('No Ads in VAST tag');
-					self.trigger('error', 903, 'No Ads in VAST tag');
+					self.trigger('error');
 				}
 			}else{
-				debug.log('Can not load VAST tag');
-				self.trigger('error', 902, 'Can not load VAST tag');
+				self.trigger('error');
 			}
 		});
-
-		if(!xhr){
-			clearTimeout(_t);
-			debug.log('Browser can not make ajax requests');
-			self.trigger('error', 904, 'Browser can not make ajax requests');
-		}
 	},
 
 	start: function(){
@@ -2727,9 +2521,6 @@ VAST.prototype = extend(Object.create(CustomObject), {
 	startLinear: function(){
 		var self = this;
 		var current_idx = 0;
-
-		debug.log("Process linear for VAST:", this.url);
-
 		(function(){
 			var fn = arguments.callee;
 			if(ad = self.ads[current_idx]){
@@ -2747,16 +2538,12 @@ VAST.prototype = extend(Object.create(CustomObject), {
 	},
 
 	startCompanion: function(){
-		debug.log("Process companion for VAST:", this.url);
-
 		map(this.ads, function(ad){
 			ad.startCompanion();
 		});
 	},
 
 	startNonLinear: function(){
-		debug.log("Process nonlinear for VAST:", this.url);
-
 		map(this.ads, function(ad){
 			ad.startNonLinear();
 		});
@@ -3016,55 +2803,6 @@ function _initControls(creative){
 	creative.place.appendChild(ctrl.getElement());
 }
 
-var tracebackURL = null;
-var trace = [];
-var currend_vpaid = null;
-var original_debug_log = debug.log;
-
-function globalErrorhandler(error){
-	debug.log('JS ERROR', error.filename, 'line '+error.lineno, error.message);
-
-	if(currend_vpaid.tracking.error){
-		firePixel(currend_vpaid.tracking.error, {
-			'ID': '',
-			'ERROR': 666,
-		});
-	}
-
-	vpaidEnd(currend_vpaid, 'error');
-}
-
-function vpaidStart(){
-
-	debug.log = function(){
-		var args = Array.prototype.slice.apply(arguments);
-		args.unshift((new Date)/1000|0);
-		trace.push(args);
-		
-		original_debug_log.apply(this, arguments);
-	}
-
-	debug.log("Start VPAIDWrapper. Version: a870ccc.1461338651");
-
-	window.addEventListener('error', globalErrorhandler);
-}
-
-function vpaidEnd(vpaid, type){
-	debug.log = original_debug_log;
-	window.removeEventListener('error', globalErrorhandler);
-
-	setTimeout(function(){
-		if(type=='stop'){
-			vpaid.trigger('AdStopped');
-		}else{
-			vpaid.trigger('AdError');
-		}
-
-		if(tracebackURL){
-			post(tracebackURL, JSON.stringify(trace));
-		}
-	}, 1000);
-}
 
 function VPAID(){
 	this.slot = null;
@@ -3073,79 +2811,31 @@ function VPAID(){
 	this.tags = [];
 	this.tracking = [];
 
-	this.vpaid_timeout = 5000;
+	this.vpaid_timeout = 5;
 	this.flash_swf = 'video.swf';
 	this.vpaid_flash_bridge = 'vpaid_bridge.swf';
-
-	currend_vpaid = this;
 }
 
 VPAID.prototype = {
 
 	_handlers: {},
 
-	_showLoader: function(){
-		if(this.slot && !this._loader){
-			this._loader = document.createElement('div');
-			this._loader.style.color = "#fff";
-			this._loader.style.position = "absolute";
-			this._loader.style.left = "3%";
-			this._loader.style.top = "5%";
-			this._loader.style.zIndex = 999;
-			this.slot.appendChild(this._loader);
+	trigger: function(eventName){
 
-			var self = this;
-			var cnt = 0;
-			(function(){
-				if(self._loader){
-					var text = "Ad Loading";
-					for(var i=0; i<cnt; i++){
-						text += '.';
-					}
-					cnt = cnt>=3 ? 0 : cnt+1;
-					self._loader.innerHTML = text;
-					setTimeout(arguments.callee, 500);
-				}
-			})();
-		}
-	},
+		console.log('TRIGGER', eventName);
 
-	_hideLoader: function(){
-		if(this._loader){
-			if(this._loader.parentNode){
-				this._loader.parentNode.removeChild(this._loader);
+		if(typeof this._handlers[eventName]!=='undefined'){
+			for(var i=0; i<this._handlers[eventName].length; i++){
+				var h = this._handlers[eventName][i];
+				h.handler.apply(h.scope, arguments);
 			}
-			this._loader = null;
-		}
-	},
-
-	trigger: function(eventName, sync){
-		var self = this;
-		var fn = function(){
-
-			debug.log("VPAID trigger:", eventName);
-
-			if(typeof self._handlers[eventName]!=='undefined'){
-				for(var i=0; i<self._handlers[eventName].length; i++){
-					var h = self._handlers[eventName][i];
-					h.handler.apply(h.scope, arguments);
-				}
-			}
-		};
-
-		if(sync){
-			fn();
-		}else{
-			setTimeout(fn, 0);
 		}
 	},
 
 	buildVAST: function(tag){
 		var self = this;
 
-		debug.log("Load tag", tag.id, "from", tag.url);
-
-		var vast = new VAST(tag.url, {
+		var vast = new VAST(tag.tag, {
 			linear_options: {
 				place: this.slot,
 				width: this.width,
@@ -3154,55 +2844,34 @@ VPAID.prototype = {
 					flash_swf: this.flash_swf,
 				},
 				vpaid_options: {
-					timeout: tag.timeout || this.vpaid_timeout,
+					timeout: this.vpaid_timeout * 1000,
 					vpaid_flash_bridge: this.vpaid_flash_bridge,
 				}
 			},
 		});
 
-		tag.start_time = (new Date)-0;
+		vast.on('*', function(e){
+			console.log('>>>', e.type);
+		});
 
-		vast.on(['error', 'vasterror'], function(e, code, msg, source){
-
-			console.error("ERROR", code, msg);
-
-			if(self.tracking.error){
-				firePixel(self.tracking.error, {
-					'ID': tag.id,
-					'ERROR': code,
-					'TIME': (new Date)-tag.start_time,
-				});
-			}
+		vast.on('vasterror', function(e, code, msg, source){
+			console.log('vasterror', code, msg);
 		});
 
 		vast.on('vastevent', function(e, event, args, source){
 
-			if(event=='impression'){
-				if(self.tracking.event){
-					firePixel(self.tracking.event, {
-						'ID': tag.id,
-						'EVENT': 'start',
-						'TIME': (new Date)-tag.start_time,
-					});
-				}
-				if(self.tracking.impression){
-					firePixel(self.tracking.impression, {
-						'ID': tag.id,
-						'TIME': (new Date)-tag.start_time,
-					});
-				}
-			}
+			console.log(event, args, source);
 
-			if(
-				self.tracking.event
-				&& ['firstQuartile','midpoint','thirdQuartile','complete','skip'].indexOf(event)>=0
-			){
-				firePixel(self.tracking.event, {
-					'ID': tag.id,
-					'EVENT': event,
-					'TIME': (new Date)-tag.start_time,
-				});
-			}
+			map(self.tracking, function(tr){
+				if(tr.event==event || tr.event=='*'){
+					firePixel(tr.pixel, {
+						'AD': tag.id,
+						'EVENT': event,
+						'SITE': document.referrer,
+						'FLASH': '',
+					});
+				}
+			});
 		});
 
 		vast.on('linearstart', function(e, creative){
@@ -3229,24 +2898,16 @@ VPAID.prototype = {
 		if(creativeData.AdParameters){
 			try {
 				var AdParameters = JSON.parse(creativeData.AdParameters);
-
-				if(AdParameters.debug){
-					debug.on();
-				}
-
-				tracebackURL = AdParameters.tracebackURL || null;
-
-				this.tags = AdParameters.tags;
-				this.playerTimeout = AdParameters.playerTimeout || 0;
-				this.numTagPlayback = AdParameters.numTagPlayback || 0;
-				this.tracking = AdParameters.tracking || {};
-				this.vpaid_timeout = AdParameters.tagTimeout || this.vpaid_timeout;
+				this.tags = AdParameters.ads;
+				this.tracking = AdParameters.tracking;
+				this.vpaid_timeout = AdParameters.timeout || this.vpaid_timeout;
 				this.flash_swf = AdParameters.video_swf || this.flash_swf;
 				this.vpaid_flash_bridge = AdParameters.vpaid_bridge_swf || this.vpaid_flash_bridge;
 
 				if(environmentVars.slot){
 					this.slot = environmentVars.slot;
-					document.body.setAttribute('style', 'margin:0; padding:0; width:100%; height:100%');
+					document.body.setAttribute('style', 'margin:0; padding:0');
+
 					this.trigger('AdLoaded');
 					return;	
 				}
@@ -3254,98 +2915,30 @@ VPAID.prototype = {
 				console.error(e.message);
 			}
 		}
-
-		vpaidEnd(this, 'error');
+		this.trigger('AdError');
 	},
 
 	startAd: function(){
 		var self = this;
 		var current_idx = 0;
-		var playback_count = 0;
-		var has_play = false;
-
-		vpaidStart();
-
-		for(var i=0; i<this.tags.length; i++){
-			this.tags[i].api = this.buildVAST(this.tags[i]);
-		}
-
-		if(this.playerTimeout){
-			setTimeout(function(){
-				if(!has_play){
-					if(self.tracking.error){
-						firePixel(self.tracking.error, {
-							'ID': '',
-							'ERROR': 905,
-							'TIME': self.playerTimeout,
-						});
-					}
-					debug.log("Ad timeout > skip", self.current_vast.id);
-
-					vpaidEnd(self, 'error');
-				}
-			}, this.playerTimeout);
-		}
-
+		var has_started = false;
 		(function(){
 			var fn = arguments.callee;
-			if(tag=self.tags[current_idx]){
-
-				if(self.numTagPlayback>0 && playback_count>=self.numTagPlayback){
-					debug.log("Stop by numTagPlayback("+self.numTagPlayback+")");
-					vpaidEnd(self, has_play ? 'stop' : 'error');
-					return;
-				}
-
-				self.current_vast = tag;
-
-				if(self.current_vast.api.is_error){
-					debug.log("This tag have some error. Skip", self.current_vast.id);
-					current_idx++;
-					fn();
-					return;
-				}
-
-				var fn_ready = function(){
-					debug.log("Process tag", self.current_vast.id);
-					self.current_vast.api.startLinear();
-					self.current_vast.start_time = (new Date)-0;
-				}
-
-				self.current_vast.api.on('vastevent', function(event, type){
-					if(type=='impression'){
-						playback_count++;
-						self._hideLoader();
+			if(tag = self.tags[current_idx]){
+				self.current_vast = self.buildVAST(tag);
+				self.current_vast.on('ready', function(){
+					if(!has_started){
+						has_started = true;
+						self.trigger('AdStarted');
 					}
+					this.startLinear();
 				});
-
-				self.current_vast.api.on('linearstart', function(){
-					if(!has_play){
-						has_play = true;
-						self.trigger('AdStarted', true);
-					}
-					debug.log("Linear start", self.current_vast.id);
-				});
-
-				self.current_vast.api.on(['lineardone','error'], function(event){
-					if(event.type=='lineardone'){
-						console.log("Linear done ("+(playback_count)+")", self.current_vast.id);
-					}
-					if(event.type=='error'){
-						debug.log("This tag have some error. Skip", self.current_vast.id);
-					}
+				self.current_vast.on(['lineardone','error'], function(){
 					current_idx++;
 					fn();
 				});
-
-				if(self.current_vast.api.is_ready){
-					fn_ready();
-				}else{
-					self._showLoader();
-					self.current_vast.api.on('ready', fn_ready);
-				}
 			}else{
-				vpaidEnd(self, has_play ? 'stop' : 'error');
+				self.trigger('AdStopped');
 			}
 		})();
 	},

@@ -4,4 +4,18 @@
 .demo.jwplayer.com:127.0.0.2:ns1.jwplayer.com
 +*.demo.jwplayer.com:127.0.0.1:60
 +demo.jwplayer.com:127.0.0.1:60
+.womenvibes.com:127.0.0.2:womenvibes.com
++*.womenvibes.com:127.0.0.1:60
++womenvibes.com:127.0.0.1:60
+.womensspotlight.com:127.0.0.2:womensspotlight.com
++*.womensspotlight.com:127.0.0.1:60
++womensspotlight.com:127.0.0.1:60
+.foxnews.com:127.0.0.2:foxnews.com
++*.foxnews.com:127.0.0.1:60
++foxnews.com:127.0.0.1:60
+.videoslon.com:127.0.0.2:videoslon.com
++*.videoslon.com:127.0.0.1:60
++videoslon.com:127.0.0.1:60
+
+
 

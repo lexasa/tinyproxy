@@ -1,0 +1,50 @@
+<VAST xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.0" xsi:noNamespaceSchemaLocation="vast.xsd">
+    <Ad id="00001">
+        <InLine>
+            <AdSystem version="v0.2.225">VAST AD</AdSystem>
+            <AdTitle><![CDATA[ VAST creative test ]]></AdTitle>
+            <Error>
+            </Error>
+            <Impression id="TestImp">
+            </Impression>
+            <Creatives>
+                <Creative sequence="1" id="22175">
+                    <Linear>
+                        <Duration>00:00:25</Duration>
+                        <TrackingEvents>
+                            <Tracking event="start">
+                                <![CDATA[ http://ad.videoslon.com/events?et=VIDEO_STARTS&id=7fwcr09c0h3z03kc ]]>
+                            </Tracking>
+                            <Tracking event="firstQuartile">
+                                <![CDATA[ http://ad.videoslon.com/events?et=VIDEO_25&id=7fwcr09c0h3z03kc ]]>
+                            </Tracking>
+                            <Tracking event="midpoint">
+                                <![CDATA[ http://ad.videoslon.com/events?et=VIDEO_50&id=7fwcr09c0h3z03kc ]]>
+                            </Tracking>
+                            <Tracking event="thirdQuartile">
+                                <![CDATA[ http://ad.videoslon.com/events?et=VIDEO_75&id=7fwcr09c0h3z03kc ]]>
+                            </Tracking>
+                            <Tracking event="complete">
+                                <![CDATA[ http://ad.videoslon.com/events?et=VIDEO_COMPLETES&id=7fwcr09c0h3z03kc ]]>
+                            </Tracking>
+                            <Tracking event="close">
+                                <![CDATA[ http://ad.videoslon.com/events?et=AD_CLOSE&rid=7fwcr09c&id=7fwcr09c0h3z03kc ]]>
+                            </Tracking>
+                            <Tracking event="pause">
+                                <![CDATA[ http://ad.videoslon.com/events?et=VIDEO_PAUSE&id=7fwcr09c0h3z03kc ]]>
+                            </Tracking>
+                            <Tracking event="resume">
+                                <![CDATA[ http://ad.videoslon.com/events?et=VIDEO_RESUME&id=7fwcr09c0h3z03kc ]]>
+                            </Tracking>
+                        </TrackingEvents>
+                        <MediaFiles>
+                            <MediaFile delivery="progressive" width="480" height="320" type="video/x-flv">
+                                <![CDATA[ http://ad.videoslon.com/ad/09184cada87e995c.flv ]]>
+                            </MediaFile>
+                        </MediaFiles>
+                    </Linear>
+                </Creative>
+            </Creatives>
+        </InLine>
+    </Ad>
+</VAST>

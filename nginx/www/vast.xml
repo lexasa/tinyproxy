@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<VAST version="2.0">
+<Ad id="ad_wrapper_0001">
+<InLine>
+<AdSystem>Evo</AdSystem>
+<AdTitle>Evo</AdTitle>
+<Error><![CDATA[http://vast.videoslon.com/event?type=error&code=[ERROR]&tag=[ID]&time=[TIME]&id=k5Vv1]]></Error>
+<Impression><![CDATA[http://vast.videoslon.com/event?type=impression&tag=[ID]&time=[TIME]&id=k5Vv1]]></Impression>
+<Creatives>
+<Creative sequence="1">
+<Linear>
+<Duration>00:00:01</Duration>
+<AdParameters>
+<![CDATA[
+{"tracebackURL":"/debug","vpaid_bridge_swf":"http://vast.videoslon.com/vpaid/vpaid_bridge.swf","video_swf":"http://vast.videoslon.com/vpaid/video.swf","playerTimeout":60000,"tagTimeout":20000,"numTagPlayback":3,"tracking":{"error":"http://vast.videoslon.com/event?type=error\u0026code=[ERROR]\u0026tag=[ID]\u0026time=[TIME]\u0026id=k5Vv1","impression":"http://vast.videoslon.com/event?type=impression\u0026tag=[ID]\u0026time=[TIME]\u0026id=k5Vv1","event":"http://vast.videoslon.com/event?type=[EVENT]\u0026tag=[ID]\u0026time=[TIME]\u0026id=k5Vv1"},"tags":[{"id":"0","timeout":0,"url":"http://c.adforgeinc.com/w.php?w=495.as.adforgeinc.com%2Fwww%2Fdelivery%2F\u0026vpaid=2\u0026z=29\u0026a=7470216\u0026fq=2\u0026\u0026r=http%3A%2F%2Fnew.metacafe.com%2Fvideo%3Fid%3D123\u0026u=http%3A%2F%2Fnew.metacafe.com%2Fvideo%3Fid%3D123\u0026cb=k5Vv1\u0026ti=\u0026de=\u0026du=\u0026mi=\u0026wi=\u0026he=\u0026ap=0","ref":"http%3A%2F%2Fnew.metacafe.com%2Fvideo%3Fid%3D123"},{"id":"1","timeout":0,"url":"http://c.adforgeinc.com/w.php?w=495.as.adforgeinc.com%2Fwww%2Fdelivery%2F\u0026vpaid=2\u0026z=339\u0026a=7470216\u0026fq=2\u0026r=http%3A%2F%2Fnew.metacafe.com%2Fvideo%3Fid%3D123\u0026u=http%3A%2F%2Fnew.metacafe.com%2Fvideo%3Fid%3D123\u0026cb=k5Vv1\u0026ti=\u0026de=\u0026du=\u0026mi=\u0026wi=\u0026he=\u0026ap=0","ref":"http%3A%2F%2Fnew.metacafe.com%2Fvideo%3Fid%3D123"},{"id":"2","timeout":0,"url":"http://c.adforgeinc.com/w.php?w=495.as.adforgeinc.com%2Fwww%2Fdelivery%2F\u0026vpaid=2\u0026z=341\u0026a=7470216\u0026fq=2\u0026\u0026r=http%3A%2F%2Fnew.metacafe.com%2Fvideo%3Fid%3D123\u0026u=http%3A%2F%2Fnew.metacafe.com%2Fvideo%3Fid%3D123\u0026cb=k5Vv1\u0026ti=\u0026de=\u0026du=\u0026mi=\u0026wi=\u0026he=\u0026ap=0","ref":"http%3A%2F%2Fnew.metacafe.com%2Fvideo%3Fid%3D123"}]}
+]]>
+</AdParameters>
+<MediaFiles>
+<MediaFile apiFramework="VPAID" bitrate="0" delivery="progressive" height="360" type="application/javascript" width="480">
+<![CDATA[http://vast.videoslon.com/vpaid/vpaid.js]]>
+</MediaFile>
+</MediaFiles>
+</Linear>
+</Creative>
+</Creatives>
+</InLine>
+</Ad>
+</VAST>
